@@ -1,9 +1,5 @@
-import template from 'babel-template';
-import * as babylon from 'babylon';
-
-const buildCreateElement = template('React.createElement(TAG, PROPS, CHILDREN)');
-
 module.exports = function ({ types: t }) {
+
   function getValueFromObject(obj, keyName, defaultValue) {
     let result = defaultValue;
 
@@ -33,6 +29,10 @@ module.exports = function ({ types: t }) {
   }
 
   function getClassName(block, bemProps) {
+    if (!block) {
+      return t.stringLiteral('');
+    }
+
     let classNameArguments = [t.ObjectProperty(t.Identifier('block'), block)];
 
     let elem = getValueFromObject(bemProps, 'elem');
@@ -51,9 +51,7 @@ module.exports = function ({ types: t }) {
     );
   }
 
-  function getChildren(block, bemProps) {
-    let content = getValueFromObject(bemProps, 'content');
-
+  function getChildren(block, content, state) {
     if (!content) {
       return t.NullLiteral();
     }
@@ -63,35 +61,56 @@ module.exports = function ({ types: t }) {
     }
 
     if (t.isObjectExpression(content)) {
-      return createElement(content.properties, block);
+      return createElement(content.properties, block, state);
+    }
+
+    if (t.isArrayExpression(content)) {
+      return content.elements.map((elem) => {
+        return getChildren(block, elem, state);
+      });
     }
 
     return content;
   }
 
-  function createElement(bemProps, parentBlock) {
+  function createElement(bemProps, parentBlock, state) {
     let tag = getValueFromObject(bemProps, 'tag') || t.stringLiteral('div');
     let block = getValueFromObject(bemProps, 'block') || parentBlock;
+    let children = getChildren(block, getValueFromObject(bemProps, 'content'), state);
 
-    if (!block) {
-      throw Error('no block');
+    if (!Array.isArray(children)) {
+      children = [children];
     }
 
-    return buildCreateElement({
-      TAG: tag,
-      PROPS: t.ObjectExpression([
+    return t.CallExpression(state.callee, [
+      tag,
+      t.ObjectExpression([
         ...copyProps(bemProps),
         t.ObjectProperty(t.Identifier('className'), getClassName(block, bemProps))
       ]),
-      CHILDREN: getChildren(block, bemProps)
-    });
+      ...children
+    ]);
   }
 
   return {
     visitor: {
-      CallExpression(path) {
+      Program(path, state) {
+        let id = state.opts.pragma || 'React.createElement';
+
+        state.set(
+          'jsxIdentifier',
+          id.split('.')
+            .map((name) => t.identifier(name))
+            .reduce(function (object, property) {
+              return t.memberExpression(object, property);
+            })
+        );
+      },
+
+      CallExpression(path, file) {
         const node = path.node;
         const scope = path.scope;
+        const state = {callee: file.get('jsxIdentifier')};
 
         if (node.callee.name !== 'BEM') {
           return;
@@ -104,7 +123,7 @@ module.exports = function ({ types: t }) {
         const arg = node.arguments[0];
 
         if (arg.type != 'ObjectExpression') {
-          throw Error('should be object');
+          return;
         }
 
         let block = getValueFromObject(arg.properties, 'block');
@@ -114,7 +133,7 @@ module.exports = function ({ types: t }) {
           block = scope.getData('bemBlock');
         }
 
-        const ast = createElement(arg.properties, block);
+        const ast = createElement(arg.properties, block, state);
 
         path.replaceWith(ast);
       }

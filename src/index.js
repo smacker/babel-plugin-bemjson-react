@@ -14,22 +14,41 @@ module.exports = function ({ types: t }) {
     return result;
   }
 
-  function copyProps(bemProps) {
+  function copyProps(block, bemProps) {
     const oldProps = getValueFromObject(bemProps, 'props');
-    let newProps = [];
+    const classNameProp = t.ObjectProperty(
+      t.Identifier('className'),
+      getClassName(block, bemProps)
+    );
 
-    if (oldProps) {
-      newProps = oldProps.properties
-        .map(function(prop) {
-          if (t.isObjectProperty(prop) || t.isSpreadProperty(prop)) {
-            return prop;
-          }
+    let newProps = [classNameProp];
 
-          throw Error('Wrong type of property');
-        });
+    if (!oldProps) {
+      return t.ObjectExpression(newProps);
     }
 
-    return newProps;
+    if (t.isObjectExpression(oldProps)) {
+      newProps = [
+        ...oldProps.properties
+          .map(function(prop) {
+            if (t.isObjectProperty(prop) || t.isSpreadProperty(prop)) {
+              return prop;
+            }
+
+            throw Error('Wrong type of property');
+          }),
+        ...newProps
+      ];
+    } else if (t.isMemberExpression(oldProps) || t.isExpression(oldProps)) {
+      newProps = [
+        t.SpreadProperty(oldProps),
+        ...newProps
+      ];
+    } else {
+      throw Error('unknown type of props ' + oldProps.type);
+    }
+
+    return t.ObjectExpression(newProps);
   }
 
   function getClassName(block, bemProps) {
@@ -88,10 +107,7 @@ module.exports = function ({ types: t }) {
 
     return t.CallExpression(state.callee, [
       tag,
-      t.ObjectExpression([
-        ...copyProps(bemProps),
-        t.ObjectProperty(t.Identifier('className'), getClassName(block, bemProps))
-      ]),
+      copyProps(block, bemProps),
       ...children
     ]);
   }

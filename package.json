@@ -1,0 +1,26 @@
+{
+  "name": "babel-plugin-bemjson-react",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel src/index.js > index.js",
+    "test": "node cases/test.js",
+    "watch": "node cases/test.js --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel": "^6.3.26",
+    "babel-cli": "^6.4.0",
+    "babel-core": "^6.4.0",
+    "babel-plugin-transform-class-properties": "^6.4.0",
+    "babel-preset-es2015": "^6.3.13",
+    "babel-preset-stage-1": "^6.3.13",
+    "babel-register": "^6.3.13",
+    "chalk": "^1.1.1",
+    "clear": "0.0.1",
+    "diff": "^2.2.1",
+    "watch": "^0.17.1"
+  }
+}

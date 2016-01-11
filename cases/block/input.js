@@ -1,0 +1,3 @@
+BEM({
+    block: 'test'
+});

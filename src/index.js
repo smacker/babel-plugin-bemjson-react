@@ -21,7 +21,11 @@ module.exports = function ({ types: t }) {
     if (oldProps) {
       newProps = oldProps.properties
         .map(function(prop) {
-          return t.ObjectProperty(prop.key, prop.value);
+          if (t.isObjectProperty(prop) || t.isSpreadProperty(prop)) {
+            return prop;
+          }
+
+          throw Error('Wrong type of property');
         });
     }
 

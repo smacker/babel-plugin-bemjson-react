@@ -69,7 +69,7 @@ module.exports = function ({ types: t }) {
     }
 
     return t.CallExpression(
-      t.Identifier('buildClassName'),
+      t.memberExpression(t.Identifier('BEM'), t.Identifier('buildClassName')),
       [t.ObjectExpression(classNameArguments)]
     );
   }

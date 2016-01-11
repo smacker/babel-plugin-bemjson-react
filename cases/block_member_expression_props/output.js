@@ -11,7 +11,7 @@ var data = {
 };
 
 React.createElement('div', (0, _extends3.default)({}, data.props, {
-    className: buildClassName({
+    className: BEM.buildClassName({
         block: 'test'
     })
 }), null);

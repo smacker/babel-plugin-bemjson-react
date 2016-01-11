@@ -1,7 +1,7 @@
 'use strict';
 
 React.createElement('div', {
-    className: buildClassName({
+    className: BEM.buildClassName({
         block: 'test'
     })
 }, 'content');

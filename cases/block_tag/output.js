@@ -1,7 +1,7 @@
 'use strict';
 
 React.createElement('span', {
-    className: buildClassName({
+    className: BEM.buildClassName({
         block: 'test'
     })
 }, null);

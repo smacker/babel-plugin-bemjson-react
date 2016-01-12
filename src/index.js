@@ -87,6 +87,10 @@ module.exports = function ({ types: t }) {
       return createElement(content.properties, block, state);
     }
 
+    if (t.isSpreadElement(content)) {
+      return content.argument;
+    }
+
     if (t.isArrayExpression(content)) {
       return content.elements.map((elem) => {
         return getChildren(block, elem, state);
